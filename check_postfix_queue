@@ -1,0 +1,60 @@
+#!/bin/bash
+#
+# Original Author: Cherwin Nooitmeer <cherwin@gmail.com>
+# Updated and revised by Brian Buchalter <brianb@endpoint.com>
+
+# exit codes
+e_ok=0
+e_warning=1
+e_critical=2
+e_unknown=3
+
+# regular expression that matches queue IDs (e.g. D71EF7AC80F8)
+queue_id='^[A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9]'
+
+usage="USAGE: $0 -w 50 -c 100"
+
+if [ -z $1 ]; then
+    echo $usage
+    exit $e_unknown
+fi
+
+while getopts ":w:c:" options
+do
+    case $options in
+        w ) warning=$OPTARG ;;
+        c ) critical=$OPTARG ;;
+        * ) echo $usage
+            exit $e_unknown ;;
+    esac
+done
+
+# determine queue size
+mailq_response=`mailq 2>&1`
+if [[ $? -ne 0 ]]
+then
+  echo "$mailq_response"
+  exit $e_critical
+fi
+
+qsize=$(echo $mailq_status | egrep -c $queue_id)
+
+if [ -z $qsize ]
+then
+    echo "Could not determine mail queue size"
+    exit $e_unknown
+fi
+
+if [ $qsize -ge $critical ]; then
+    retval=$e_critical
+elif [ $qsize -ge $warning ]; then
+    retval=$e_warning
+elif [ $qsize -lt $warning ]; then
+    retval=$e_ok
+fi
+
+message="$qsize mail(s) in queue | mail_queue=$qsize"
+
+echo $message
+
+exit $retval
