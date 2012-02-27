@@ -53,8 +53,6 @@ elif [ $qsize -lt $warning ]; then
     retval=$e_ok
 fi
 
-message="$qsize mail(s) in queue | mail_queue=$qsize"
-
-echo $message
+echo "$qsize mail(s) in queue | mail_queue=$qsize"
 
 exit $retval
